@@ -1,0 +1,17 @@
+services:
+  telegram-bot:
+    image: amazoncorretto:26-alpine3.24-full
+    command: /app/bin/shikigami
+    working_dir: /app
+    volumes:
+      - .:/app
+    environment:
+      SHIKIGAMI_OPTS: >-
+        --enable-final-field-mutation=ALL-UNNAMED
+    restart: unless-stopped
+    networks:
+      - shikigami
+
+networks:
+  shikigami:
+    driver: bridge
