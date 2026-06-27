@@ -60,7 +60,7 @@ object PropertyUtil {
         val dsHost = OpenAIHost(props.getProperty("openai.provider.deepseek.host"))
 
         val glmModel = ModelId("glm-5.2")
-        val gptModel = ModelId("gpt-5.5-1m")
+        val gptModel = ModelId("gpt-5.5")
         val dsModel = ModelId("deepseek-v4-pro")
         val geminiModel = ModelId("gemini-3.5-flash")
         val grokModel = ModelId("grok-4.3")
