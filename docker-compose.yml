@@ -1,0 +1,14 @@
+services:
+  telegram-bot:
+    image: amazoncorretto:21.0.12-alpine3.24
+    command: /app/bin/shikigami
+    working_dir: /app
+    volumes:
+      - .:/app
+    restart: unless-stopped
+    networks:
+      - shikigami
+
+networks:
+  shikigami:
+    driver: bridge
