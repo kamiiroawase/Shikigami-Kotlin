@@ -2,13 +2,13 @@ package com.shikigami.kotlin.util
 
 import com.aallam.openai.api.chat.ChatMessage
 import com.aallam.openai.api.chat.ChatRole
-import com.aallam.openai.api.chat.ContentPart
 import com.aallam.openai.api.chat.ImagePart
 import com.aallam.openai.api.chat.TextPart
 import com.shikigami.kotlin.model.TelegramBotMessage
 
 object OpenAiUtil {
     fun getMessages(
+        base64Pair: Pair<String?, String?>,
         systemPrompt: String?,
         telegramBotMessage: TelegramBotMessage
     ): MutableList<ChatMessage> {
@@ -23,23 +23,44 @@ object OpenAiUtil {
             )
         }
 
-        if (telegramBotMessage.replyToBotSelf) {
-            messages.add(
-                ChatMessage(
-                    role = ChatRole.Assistant,
-                    content = telegramBotMessage.replyToMessageText
+        if (base64Pair.second != null || !telegramBotMessage.replyToMessageText.isNullOrBlank()) {
+            val role = if (telegramBotMessage.replyToBotSelf) {
+                ChatRole.Assistant
+            } else {
+                ChatRole.User
+            }
+
+            base64Pair.second?.let {
+                messages.add(
+                    ChatMessage(
+                        role = role,
+                        content = if (!telegramBotMessage.replyToMessageText.isNullOrBlank()) {
+                            listOf(ImagePart(it), TextPart(telegramBotMessage.replyToMessageText))
+                        } else {
+                            listOf(ImagePart(it))
+                        }
+                    )
                 )
-            )
-        } else {
-            messages.add(
+            } ?: messages.add(
                 ChatMessage(
-                    role = ChatRole.User,
+                    role = role,
                     content = telegramBotMessage.replyToMessageText
                 )
             )
         }
 
-        messages.add(
+        base64Pair.first?.let {
+            messages.add(
+                ChatMessage(
+                    role = ChatRole.User,
+                    content = if (!telegramBotMessage.text.isNullOrBlank()) {
+                        listOf(ImagePart(it), TextPart(telegramBotMessage.text))
+                    } else {
+                        listOf(ImagePart(it))
+                    }
+                )
+            )
+        } ?: messages.add(
             ChatMessage(
                 role = ChatRole.User,
                 content = telegramBotMessage.text
@@ -47,34 +68,5 @@ object OpenAiUtil {
         )
 
         return messages
-    }
-
-    fun removeBlankPlaceholder(
-        base64: String?,
-        index: Int,
-        openAiMessages: MutableList<ChatMessage>,
-    ) {
-        val message = openAiMessages[index]
-
-        if (base64 == null) {
-            if (message.content.isNullOrBlank()) {
-                openAiMessages.removeAt(index = index)
-            }
-
-            return
-        }
-
-        message.content.let {
-            val content = mutableListOf<ContentPart>(ImagePart(base64))
-
-            if (!it.isNullOrBlank()) {
-                content.add(TextPart(it))
-            }
-
-            openAiMessages[index] = ChatMessage(
-                role = message.role,
-                content = content
-            )
-        }
     }
 }

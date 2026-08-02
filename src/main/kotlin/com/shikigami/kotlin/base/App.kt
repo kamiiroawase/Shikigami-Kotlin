@@ -1,7 +1,6 @@
 package com.shikigami.kotlin.base
 
 import com.aallam.openai.api.chat.ChatCompletionRequest
-import com.aallam.openai.api.chat.ChatMessage
 import com.aallam.openai.api.model.ModelId
 import com.aallam.openai.client.OpenAI
 import com.github.kotlintelegrambot.Bot
@@ -99,18 +98,10 @@ object App : CoroutineScope {
                                 }
 
                                 runOpenaiCompletion(
-                                    bot = bot,
-                                    openAiModel = model,
-                                    openAiClient = openAiClient,
                                     telegramBotMessage = telegramBotMessage,
-                                    openAiMessages = OpenAiUtil.getMessages(
-                                        telegramBotMessage = telegramBotMessage,
-                                        systemPrompt = if (command.startsWith("mmj")) {
-                                            Properties.telegramBotConfig.mmjPrompt
-                                        } else {
-                                            null
-                                        }
-                                    )
+                                    openAiClient = openAiClient,
+                                    openAiModel = model,
+                                    bot = bot
                                 )
                             }
                         }
@@ -128,8 +119,7 @@ object App : CoroutineScope {
         bot: Bot,
         openAiModel: ModelId,
         openAiClient: OpenAI,
-        telegramBotMessage: TelegramBotMessage,
-        openAiMessages: MutableList<ChatMessage>
+        telegramBotMessage: TelegramBotMessage
     ) {
         if (telegramBotMessage.chat.id !in Properties.telegramBotConfig.allowedChatIds) {
             launch {
@@ -182,16 +172,14 @@ object App : CoroutineScope {
                     }?.await()
                 )
 
-                OpenAiUtil.removeBlankPlaceholder(
-                    index = openAiMessages.size - 2,
-                    openAiMessages = openAiMessages,
-                    base64 = base64Pair.second
-                )
-
-                OpenAiUtil.removeBlankPlaceholder(
-                    index = openAiMessages.size - 1,
-                    openAiMessages = openAiMessages,
-                    base64 = base64Pair.first
+                val openAiMessages = OpenAiUtil.getMessages(
+                    base64Pair = base64Pair,
+                    telegramBotMessage = telegramBotMessage,
+                    systemPrompt = if (telegramBotMessage.command.startsWith("mmj")) {
+                        Properties.telegramBotConfig.mmjPrompt
+                    } else {
+                        null
+                    }
                 )
 
                 try {
