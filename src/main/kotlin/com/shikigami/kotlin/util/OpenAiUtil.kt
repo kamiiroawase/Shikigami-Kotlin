@@ -23,22 +23,20 @@ object OpenAiUtil {
             )
         }
 
-        if (!telegramBotMessage.replyToMessageText.isNullOrBlank()) {
-            if (telegramBotMessage.replyToBotSelf) {
-                messages.add(
-                    ChatMessage(
-                        role = ChatRole.Assistant,
-                        content = telegramBotMessage.replyToMessageText
-                    )
+        if (telegramBotMessage.replyToBotSelf) {
+            messages.add(
+                ChatMessage(
+                    role = ChatRole.Assistant,
+                    content = telegramBotMessage.replyToMessageText
                 )
-            } else {
-                messages.add(
-                    ChatMessage(
-                        role = ChatRole.User,
-                        content = telegramBotMessage.replyToMessageText
-                    )
+            )
+        } else {
+            messages.add(
+                ChatMessage(
+                    role = ChatRole.User,
+                    content = telegramBotMessage.replyToMessageText
                 )
-            }
+            )
         }
 
         messages.add(
@@ -51,40 +49,25 @@ object OpenAiUtil {
         return messages
     }
 
-    fun replaceImageMessages(
-        base64Pair: Pair<String?, String?>,
-        openAiMessages: MutableList<ChatMessage>,
-    ) {
-        if (base64Pair.second != null) {
-            replaceImageMessage(
-                index = openAiMessages.size - 2,
-                openAiMessages = openAiMessages,
-                base64 = base64Pair.second
-            )
-        }
-
-        if (base64Pair.first != null) {
-            replaceImageMessage(
-                index = openAiMessages.size - 1,
-                openAiMessages = openAiMessages,
-                base64 = base64Pair.first
-            )
-        }
-    }
-
-    private fun replaceImageMessage(
+    fun removeBlankPlaceholder(
         base64: String?,
         index: Int,
         openAiMessages: MutableList<ChatMessage>,
     ) {
-        if (base64 == null) return
-
         val message = openAiMessages[index]
 
-        message.content?.let {
+        if (base64 == null) {
+            if (message.content.isNullOrBlank()) {
+                openAiMessages.removeAt(index = index)
+            }
+
+            return
+        }
+
+        message.content.let {
             val content = mutableListOf<ContentPart>(ImagePart(base64))
 
-            if (it.isNotBlank()) {
+            if (!it.isNullOrBlank()) {
                 content.add(TextPart(it))
             }
 

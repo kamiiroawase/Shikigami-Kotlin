@@ -140,7 +140,7 @@ object App : CoroutineScope {
                             "\n${telegramBotMessage.from.firstName}" +
                             (telegramBotMessage.from.lastName?.let {
                                 if (!it.isBlank()) {
-                                    " it"
+                                    " $it"
                                 } else {
                                     null
                                 }
@@ -173,16 +173,25 @@ object App : CoroutineScope {
 
         launch {
             val content = try {
-                OpenAiUtil.replaceImageMessages(
+                val base64Pair = Pair(
+                    telegramBotMessage.files.lastOrNull()?.let {
+                        async { TelegramBotUtil.getFileBase64(bot = bot, file = it) }
+                    }?.await(),
+                    telegramBotMessage.replyToFiles.lastOrNull()?.let {
+                        async { TelegramBotUtil.getFileBase64(bot = bot, file = it) }
+                    }?.await()
+                )
+
+                OpenAiUtil.removeBlankPlaceholder(
+                    index = openAiMessages.size - 2,
                     openAiMessages = openAiMessages,
-                    base64Pair = Pair(
-                        telegramBotMessage.replyToFiles.lastOrNull()?.let {
-                            async { TelegramBotUtil.getFileBase64(bot = bot, file = it) }
-                        }?.await(),
-                        telegramBotMessage.files.lastOrNull()?.let {
-                            async { TelegramBotUtil.getFileBase64(bot = bot, file = it) }
-                        }?.await()
-                    ),
+                    base64 = base64Pair.second
+                )
+
+                OpenAiUtil.removeBlankPlaceholder(
+                    index = openAiMessages.size - 1,
+                    openAiMessages = openAiMessages,
+                    base64 = base64Pair.first
                 )
 
                 try {

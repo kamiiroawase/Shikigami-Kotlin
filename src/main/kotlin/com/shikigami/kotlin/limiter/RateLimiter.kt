@@ -11,17 +11,15 @@ class RateLimiter(
     private val limiters = ConcurrentHashMap<String, FixedWindowRateLimiter>()
 
     fun allow(key: String): Boolean {
+        val limiter = limiters.computeIfAbsent(key) {
+            FixedWindowRateLimiter(maxCount, windowMillis)
+        }.apply { touch() }
+
         val now = System.currentTimeMillis()
 
         limiters.entries.removeIf {
             (now - it.value.lastAccessTime) > expireMillis
         }
-
-        val limiter = limiters.computeIfAbsent(key) {
-            FixedWindowRateLimiter(maxCount, windowMillis)
-        }
-
-        limiter.touch()
 
         return limiter.allow()
     }
